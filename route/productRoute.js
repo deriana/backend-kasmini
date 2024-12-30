@@ -10,5 +10,6 @@ router.get('/products', authenticateJWT, productController.getAllProducts);
 router.get('/products/:id_product', authenticateJWT, productController.getProductById);
 router.put('/products/:id_product', authenticateJWT, authorizeRoles(['pemilik']), productController.updateProduct);
 router.delete('/products/:id_product', authenticateJWT, authorizeRoles(['pemilik']), productController.deleteProduct);
+router.post('/products/stock', authenticateJWT, productController.adjustProductStock)
 
 module.exports = router;

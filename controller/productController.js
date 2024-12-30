@@ -1,7 +1,6 @@
 const Product = require("../model/productModel");
 const { successResponse, errorResponse } = require("../providers/response");
 
-// Controller to get a product by its ID
 const getProductById = async (req, res) => {
   const { id_product } = req.params;
 
@@ -27,7 +26,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-// Controller to get all products
 const getAllProducts = async (req, res) => {
   try {
     Product.getAllProduct((err, results) => {
@@ -46,35 +44,27 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-// Controller to add a new product
 const addProduct = async (req, res) => {
-  const { product_name, price, stock, category_id, image } = req.body;
-
-  if (!product_name || !price || !stock || !category_id || !image) {
-    return res
-      .status(400)
-      .json(errorResponse({ message: "Data canot be empty" }));
-  }
+  const { product_name, price, purchase_price, stock, unit, category_id, image } = req.body;
 
   try {
-    Product.createProduct(product_name, price, stock, category_id, image);
-    Product.getAllProduct((err, results) => {
-      if (err)
-        return res.status(500).json(errorResponse({ message: "Server error" }));
+    Product.addProduct(product_name, price, purchase_price, stock, unit, category_id, image, (err, productId) => {
+      if (err) {
+        return res.status(500).json(errorResponse({ message: err.message }));
+      }
 
       const response = successResponse({
-        data: results,
-        message: "Product created succesfully",
+        message: "Product added successfully",
+        data: { id_product: productId },
       });
       return res.status(201).json(response);
     });
   } catch (error) {
-    console.error("Error creating category:", error);
+    console.error("Error adding product:", error);
     return res.status(500).json(errorResponse({ message: error.message }));
   }
 };
 
-// Controller to update a product
 const updateProduct = async (req, res) => {
   const { id_product } = req.params;
   const { product_name, price, stock, category_id, image } = req.body;
@@ -135,10 +125,42 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const adjustProductStock = async (req, res) => {
+  const { product_id, user_id, quantity_change, reason } = req.body;
+
+  if (!product_id || !user_id || !quantity_change || !reason) {
+    return res
+      .status(400)
+      .json(errorResponse({ message: "Data cannot be empty" }));
+  }
+
+  try {
+    Product.adjustProductStock(product_id, user_id, quantity_change, reason);
+    Product.getAllProduct((err, results) => {
+      if (err) {
+        return res
+          .status(500)
+          .json(errorResponse({ message: "Failed to fetch updated products" }));
+      }
+
+      const response = successResponse({
+        data: results,
+        message: "Stock adjusted successfully",
+      });
+      return res.status(200).json(response);
+    });
+  } catch (error) {
+    console.error("Error adjusting stock:", error);
+    return res.status(500).json(errorResponse({ message: error.message }));
+  }
+};
+
+
 module.exports = {
   getProductById,
   getAllProducts,
   addProduct,
   updateProduct,
   deleteProduct,
+  adjustProductStock
 };
