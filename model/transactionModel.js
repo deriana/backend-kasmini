@@ -138,6 +138,70 @@ const confirmPayment = (transaction_id, amount, payment_method, callback) => {
   });
 };
 
+const cancelPayment = (transaction_id, callback) => {
+  const updateTransactionStatusQuery = `
+    UPDATE transactions SET status = 'dibatalkan' WHERE id_transaction = ?`;
+  db.query(updateTransactionStatusQuery, [transaction_id], callback);
+};
+
+const getTransactionById = (transaction_id, callback) => {
+  const query = `
+    SELECT 
+        t.id_transaction,
+        t.transaction_date,
+        t.status,
+        t.customer_name,
+        t.payment_method AS transaction_payment_method,
+        t.total AS transaction_total,
+        t.discount AS transaction_discount,
+        t.tax AS transaction_tax,
+        td.id_transaction_detail,
+        td.unit_price AS detail_unit_price,
+        td.quantity AS detail_quantity,
+        td.subtotal AS detail_subtotal,
+        td.discount AS detail_discount,
+        p.product_name,
+        p.price AS product_price,
+        p.purchase_price,
+        c.category_name,
+        pr.payment_date,
+        pr.amount AS payment_amount
+    FROM 
+        transactions t
+    LEFT JOIN 
+        transaction_details td ON t.id_transaction = td.transaction_id
+    LEFT JOIN 
+        products p ON td.product_id = p.id_product
+    LEFT JOIN 
+        categories c ON p.category_id = c.id_category
+    LEFT JOIN 
+        payment_records pr ON t.id_transaction = pr.transaction_id
+    WHERE 
+        t.id_transaction = ?;
+  `;
+  db.query(query, [transaction_id], callback);
+};
+
+const updateTransaction = (transaction_id, user_id, customer_name, payment_method, total, global_discount, tax, callback) => {
+  const query = `
+    UPDATE transactions 
+    SET user_id = ?, customer_name = ?, payment_method = ?, total = ?, discount = ?, tax = ? 
+    WHERE id_transaction = ?`;
+  db.query(query, [user_id, customer_name, payment_method, total, global_discount, tax, transaction_id], callback);
+};
+
+const upsertTransactionDetail = (transaction_id, product_id, quantity, unit_price, discount, subtotal, callback) => {
+  const query = `
+    INSERT INTO transaction_details (transaction_id, product_id, quantity, unit_price, discount, subtotal)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      quantity = VALUES(quantity),
+      unit_price = VALUES(unit_price),
+      discount = VALUES(discount),
+      subtotal = VALUES(subtotal)`;
+  db.query(query, [transaction_id, product_id, quantity, unit_price, discount, subtotal], callback);
+};
+
 module.exports = {
   createTransaction,
   createTransactionDetail,
@@ -145,4 +209,8 @@ module.exports = {
   calculateSubtotal,
   calculateTransactionTotal,
   confirmPayment,
+  cancelPayment,
+  getTransactionById,
+  updateTransaction,
+  upsertTransactionDetail,
 };

@@ -111,7 +111,7 @@ const adjustProductStock = (product_id, user_id, quantity_change, reason, callba
       db.query(insertStockRecordQuery, [product_id, user_id, quantity_change, reason], (err) => {
         if (err) return callback(err);
 
-        callback(null); // Berhasil
+        callback(null);
       });
     });
   });

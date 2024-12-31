@@ -7,5 +7,8 @@ const router = express.Router();
 
 router.post("/transactions",authenticateJWT, transactionController.createTransaction);
 router.post("/transactions/confirm",authenticateJWT, transactionController.confirmPayment);
+router.put("/transactions/cancel/:transaction_id",authenticateJWT, transactionController.cancelPayment);
+router.get("/transactions/:transaction_id",authenticateJWT, transactionController.getPaymentById);
+router.put("/transactions/edit/:transaction_id",authenticateJWT, transactionController.updateTransaction);
 
-module.exports = router;
+module.exports = router;    
