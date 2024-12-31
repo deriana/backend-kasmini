@@ -9,6 +9,7 @@ const productRoute = require('./route/productRoute');
 const transactionRoute = require('./route/transactionRoute');
 const expensesRoute = require('./route/expensesRoute');
 const storeRoute = require('./route/storeRoute');
+const reportRoute = require("./route/reportRoute");
 
 dotenv.config();
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api', productRoute);
 app.use('/api', transactionRoute);
 app.use('/api', expensesRoute);
 app.use('/api', storeRoute);
+app.use('/api', reportRoute);
 app.use(errorMiddleware);
 
 app.listen(process.env.PORT, () => {
