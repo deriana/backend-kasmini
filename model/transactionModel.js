@@ -50,35 +50,29 @@ const createTransactionDetail = (
 const adjustStockForTransaction = (transactionDetails, user_id, callback) => {
   let errorOccurred = false;
 
-  // Iterasi setiap detail transaksi
   transactionDetails.forEach(({ product_id, quantity }, index) => {
-    // Update stok produk di tabel products
     const updateStockQuery = `UPDATE products SET stock = stock - ? WHERE id_product = ? AND stock >= ?`;
     db.query(updateStockQuery, [quantity, product_id, quantity], (err, result) => {
       if (err || result.affectedRows === 0) {
-        errorOccurred = true; // Jika ada error saat update stok
+        errorOccurred = true;
       }
 
       if (!errorOccurred) {
-        // Menambahkan perubahan stok ke tabel stock_records
-        const reason = "Product sale"; // Alasan perubahan stok
+        const reason = "Product sale"; 
         const insertStockRecordQuery = `
           INSERT INTO stock_records (product_id, user_id, quantity_change, reason)
           VALUES (?, ?, ?, ?)`;
         
-        // Menambahkan data perubahan stok
         db.query(insertStockRecordQuery, [product_id, user_id, -quantity, reason], (err) => {
           if (err) {
-            errorOccurred = true; // Jika ada error saat insert ke stock_records
+            errorOccurred = true; 
           }
 
-          // Jika proses untuk semua detail transaksi sudah selesai, panggil callback
           if (index === transactionDetails.length - 1) {
             callback(errorOccurred ? new Error("Stock adjustment failed") : null);
           }
         });
       } else if (index === transactionDetails.length - 1) {
-        // Jika ada error, kirimkan ke callback
         callback(new Error("Stock adjustment failed"));
       }
     });
@@ -111,10 +105,44 @@ const calculateTransactionTotal = (details, global_discount, tax) => {
   return total;
 };
 
+const confirmPayment = (transaction_id, amount, payment_method, callback) => {
+  const getTransactionQuery = `SELECT total FROM transactions WHERE id_transaction = ?`;
+  const insertPaymentRecordQuery = `
+    INSERT INTO payment_records (transaction_id, amount, payment_method)
+    VALUES (?, ?, ?)`;
+  const updateTransactionStatusQuery = `
+    UPDATE transactions SET status = 'sudah bayar' WHERE id_transaction = ?`;
+
+  db.query(getTransactionQuery, [transaction_id], (err, results) => {
+    if (err) return callback(err);
+
+    if (results.length === 0) {
+      return callback(new Error("Transaction not found"));
+    }
+
+    const total = results[0].total;
+
+    if (amount < total) {
+      return callback(new Error("Insufficient payment: Amount is less than total transaction cost"));
+    }
+
+    db.query(insertPaymentRecordQuery, [transaction_id, amount, payment_method], (err, result) => {
+      if (err) return callback(err);
+
+      db.query(updateTransactionStatusQuery, [transaction_id], (err) => {
+        if (err) return callback(err);
+
+        callback(null);
+      });
+    });
+  });
+};
+
 module.exports = {
   createTransaction,
   createTransactionDetail,
   adjustStockForTransaction,
   calculateSubtotal,
   calculateTransactionTotal,
+  confirmPayment,
 };
