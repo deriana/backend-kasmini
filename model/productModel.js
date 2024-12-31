@@ -6,14 +6,24 @@ const createProduct = (product_name, price, stock, category_id, image) => {
 };
 
 const getAllProduct = (callback) => {
-  const query = "SELECT * FROM products";
+  const query = `
+    SELECT p.id_product, p.product_name, p.price, p.purchase_price, p.stock, p.unit, 
+           p.image, p.created_at, c.category_name
+    FROM products p
+    INNER JOIN categories c ON p.category_id = c.id_category`;
   db.query(query, callback);
 };
 
 const getProductById = (id_product, callback) => {
-  const query = "SELECT * FROM products WHERE id_product = ?";
+  const query = `
+    SELECT p.id_product, p.product_name, p.price, p.purchase_price, p.stock, p.unit, 
+           p.image, p.created_at, c.category_name
+    FROM products p
+    INNER JOIN categories c ON p.category_id = c.id_category
+    WHERE p.id_product = ?`;
   db.query(query, [id_product], callback);
 };
+
 
 const updateProduct = (
   id_product,
